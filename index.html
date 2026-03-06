@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -209,7 +210,7 @@ animation:flotar 1s linear forwards;
 <div class="section active" id="inicio">
 
 <h1>❤️ Para Valeria ❤️</h1>
-<p id="mensajeInicio">Toca la pantalla para ver algo bonito 💖</p>
+<p>Toca la pantalla para ver algo bonito 💖</p>
 
 </div>
 
@@ -389,16 +390,48 @@ fotos.forEach(src=>crearImagen(src))
 function crearImagen(src){
 
 const img=document.createElement("img")
-
 img.src=src
 
+/* ZOOM */
 img.onclick=()=>zoom(src)
+
+/* BORRAR EN CELULAR (mantener presionado) */
+
+let presionado
+
+img.addEventListener("touchstart",()=>{
+
+presionado=setTimeout(()=>{
+
+if(confirm("¿Quieres borrar esta foto?")){
+
+img.remove()
+
+let fotos=JSON.parse(localStorage.getItem("fotos"))||[]
+
+fotos=fotos.filter(f=>f!==src)
+
+localStorage.setItem("fotos",JSON.stringify(fotos))
+
+}
+
+},800)
+
+})
+
+img.addEventListener("touchend",()=>{
+
+clearTimeout(presionado)
+
+})
+
+/* BORRAR EN PC */
 
 img.oncontextmenu=(e)=>{
 
 e.preventDefault()
 
-if(confirm("¿Borrar esta foto?")){
+if(confirm("¿Quieres borrar esta foto?")){
 
 img.remove()
 
@@ -466,11 +499,9 @@ function crearCorazon(){
 const heart=document.createElement("div")
 
 heart.className="heart"
-
 heart.innerHTML="💖"
 
 heart.style.left=Math.random()*260+"px"
-
 heart.style.top="-30px"
 
 gameArea.appendChild(heart)
