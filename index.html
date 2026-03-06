@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Para Valeria ❤️</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Poppins:wght@300;400&display=swap" rel="stylesheet">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<style>
+
+body{
+margin:0;
+font-family:'Poppins',sans-serif;
+background:black;
+color:white;
+text-align:center;
+overflow-x:hidden;
+}
+
+/* GALAXIA */
+
+canvas{
+position:fixed;
+top:0;
+left:0;
+z-index:-1;
+}
+
+/* LOGIN */
+
+#login{
+height:100vh;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+}
+
+#login input{
+padding:12px;
+border-radius:20px;
+border:none;
+width:200px;
+}
+
+#login button{
+margin-top:10px;
+padding:10px 20px;
+border:none;
+border-radius:20px;
+background:#ff4d6d;
+color:white;
+cursor:pointer;
+}
+
+/* MENU */
+
+.menu{
+display:none;
+flex-wrap:wrap;
+gap:10px;
+justify-content:center;
+background:rgba(0,0,0,0.7);
+padding:10px;
+}
+
+.menu button{
+background:#ff4d6d;
+border:none;
+color:white;
+padding:8px 15px;
+border-radius:20px;
+cursor:pointer;
+}
+
+/* SECCIONES */
+
+.section{
+display:none;
+padding:40px 20px;
+}
+
+.section.active{
+display:block;
+}
+
+/* CARTA */
+
+#carta h1{
+font-family:'Great Vibes',cursive;
+font-size:45px;
+color:#ff6b8a;
+}
+
+.cartaBox{
+max-width:650px;
+margin:auto;
+padding:40px;
+border-radius:25px;
+
+background:rgba(255,255,255,0.12);
+backdrop-filter:blur(15px);
+
+box-shadow:
+0 20px 60px rgba(0,0,0,0.7),
+0 0 30px rgba(255,77,109,0.4);
+
+font-size:18px;
+line-height:1.8;
+}
+
+#cartaTexto{
+white-space:pre-line;
+}
+
+/* GALERIA */
+
+#galeriaGrid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(110px,1fr));
+gap:10px;
+margin-top:20px;
+max-width:700px;
+margin:auto;
+}
+
+#galeriaGrid img{
+width:100%;
+height:110px;
+object-fit:cover;
+border-radius:10px;
+cursor:pointer;
+}
+
+/* ZOOM */
+
+#zoom{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.9);
+display:none;
+align-items:center;
+justify-content:center;
+}
+
+#zoom img{
+max-width:90%;
+max-height:90%;
+}
+
+/* JUEGO */
+
+#gameArea{
+width:90%;
+max-width:320px;
+height:420px;
+border:2px solid white;
+margin:auto;
+position:relative;
+overflow:hidden;
+}
+
+.heart{
+position:absolute;
+font-size:32px;
+cursor:pointer;
+}
+
+/* CORAZONES TOQUE */
+
+.touchHeart{
+position:fixed;
+font-size:22px;
+pointer-events:none;
+animation:flotar 1s linear forwards;
+}
+
+@keyframes flotar{
+0%{transform:scale(1);opacity:1;}
+100%{transform:translateY(-60px) scale(1.5);opacity:0;}
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="login">
+
+<h2>🔐 Área privada para Valeria</h2>
+
+<input type="password" id="pass" placeholder="Contraseña">
+
+<button onclick="verificar()">Entrar</button>
+
+</div>
+
+<div class="menu" id="menu">
+
+<button onclick="mostrar('inicio')">Inicio</button>
+<button onclick="mostrar('carta')">Carta</button>
+<button onclick="mostrar('galeria')">Galería</button>
+<button onclick="mostrar('juego')">Juego</button>
+<button onclick="mostrar('musica')">Música</button>
+
+</div>
+
+<div class="section active" id="inicio">
+
+<h1>❤️ Para Valeria ❤️</h1>
+<p>Toca la pantalla para ver algo bonito 💖</p>
+
+</div>
+
+<div class="section" id="carta">
+
+<h1>💌 Carta para ti</h1>
+
+<div class="cartaBox">
+
+<div id="cartaTexto"></div>
+
+</div>
+
+<h2 id="contador"></h2>
+
+</div>
+
+<div class="section" id="galeria">
+
+<h1>📸 Nuestros recuerdos</h1>
+
+<input type="file" id="subirFotos" multiple accept="image/*">
+
+<div id="galeriaGrid"></div>
+
+</div>
+
+<div class="section" id="juego">
+
+<h1>🎮 Atrapa corazones</h1>
+
+<p>Puntos: <span id="puntos">0</span></p>
+
+<div id="gameArea"></div>
+
+</div>
+
+<div class="section" id="musica">
+
+<h1>🎵 Nuestra música</h1>
+
+<audio id="player" controls></audio>
+
+</div>
+
+<div id="zoom" onclick="cerrarZoom()">
+<img id="zoomImg">
+</div>
+
+<script>
+
+/* GALAXIA 3D */
+
+const scene=new THREE.Scene()
+
+const camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000)
+
+const renderer=new THREE.WebGLRenderer()
+
+renderer.setSize(window.innerWidth,window.innerHeight)
+
+document.body.appendChild(renderer.domElement)
+
+renderer.domElement.style.position="fixed"
+renderer.domElement.style.top=0
+renderer.domElement.style.left=0
+renderer.domElement.style.zIndex=-1
+
+const starsGeometry=new THREE.BufferGeometry()
+
+const starCount=8000
+const positions=new Float32Array(starCount*3)
+
+for(let i=0;i<starCount*3;i++){
+positions[i]=(Math.random()-0.5)*2000
+}
+
+starsGeometry.setAttribute("position",new THREE.BufferAttribute(positions,3))
+
+const starsMaterial=new THREE.PointsMaterial({color:0xffffff,size:1})
+
+const starField=new THREE.Points(starsGeometry,starsMaterial)
+
+scene.add(starField)
+
+camera.position.z=5
+
+function animate(){
+
+requestAnimationFrame(animate)
+
+starField.rotation.x+=0.0002
+starField.rotation.y+=0.0005
+
+renderer.render(scene,camera)
+
+}
+
+animate()
+
+/* CONTRASEÑA */
+
+const passwordReal="teamo"
+
+function verificar(){
+
+if(document.getElementById("pass").value===passwordReal){
+
+login.style.display="none"
+menu.style.display="flex"
+
+iniciar()
+
+}else{
+
+alert("Contraseña incorrecta")
+
+}
+
+}
+
+/* SECCIONES */
+
+function mostrar(id){
+
+document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"))
+
+document.getElementById(id).classList.add("active")
+
+}
+
+/* CARTA */
+
+const texto=`Valeria...
+
+Desde el 8 de enero de 2026
+mi vida cambió completamente.
+
+Cada momento contigo
+se volvió especial.
+
+Tu sonrisa ilumina mis días
+y tu voz calma mi corazón.
+
+Quiero seguir caminando contigo
+sin importar lo que pase.
+
+Te amo ❤️`
+
+let i=0
+
+function escribirCarta(){
+
+if(i<texto.length){
+
+cartaTexto.innerHTML+=texto.charAt(i)
+
+i++
+
+setTimeout(escribirCarta,35)
+
+}
+
+}
+
+/* CONTADOR */
+
+function actualizarContador(){
+
+const inicio=new Date("2026-01-08T00:00:00")
+
+const ahora=new Date()
+
+const diff=ahora-inicio
+
+const d=Math.floor(diff/86400000)
+const h=Math.floor(diff/3600000)%24
+const m=Math.floor(diff/60000)%60
+const s=Math.floor(diff/1000)%60
+
+contador.innerHTML=`❤️ ${d} días ${h}h ${m}m ${s}s juntos ❤️`
+
+}
+
+/* GALERIA */
+
+function cargarFotos(){
+
+const fotos=JSON.parse(localStorage.getItem("fotos"))||[]
+
+fotos.forEach(src=>crearImagen(src))
+
+}
+
+function crearImagen(src){
+
+const img=document.createElement("img")
+
+img.src=src
+
+img.onclick=()=>zoom(src)
+
+galeriaGrid.appendChild(img)
+
+}
+
+subirFotos.addEventListener("change",e=>{
+
+let fotos=JSON.parse(localStorage.getItem("fotos"))||[]
+
+;[...e.target.files].forEach(file=>{
+
+const reader=new FileReader()
+
+reader.onload=ev=>{
+
+crearImagen(ev.target.result)
+
+fotos.push(ev.target.result)
+
+localStorage.setItem("fotos",JSON.stringify(fotos))
+
+}
+
+reader.readAsDataURL(file)
+
+})
+
+})
+
+function zoom(src){
+
+zoomImg.src=src
+
+zoom.style.display="flex"
+
+}
+
+function cerrarZoom(){
+
+zoom.style.display="none"
+
+}
+
+/* JUEGO */
+
+let puntos=0
+
+function crearCorazon(){
+
+const heart=document.createElement("div")
+
+heart.className="heart"
+
+heart.innerHTML="💖"
+
+heart.style.left=Math.random()*260+"px"
+
+heart.style.top="-30px"
+
+gameArea.appendChild(heart)
+
+let y=-30
+
+const fall=setInterval(()=>{
+
+y+=3
+
+heart.style.top=y+"px"
+
+if(y>400){
+
+heart.remove()
+
+clearInterval(fall)
+
+}
+
+},20)
+
+heart.onclick=()=>{
+
+puntos++
+
+puntosSpan.textContent=puntos
+
+heart.remove()
+
+clearInterval(fall)
+
+}
+
+}
+
+setInterval(crearCorazon,1200)
+
+/* CORAZONES TOQUE */
+
+document.addEventListener("click",e=>{
+
+const c=document.createElement("div")
+
+c.className="touchHeart"
+
+c.innerHTML="💖"
+
+c.style.left=e.pageX+"px"
+
+c.style.top=e.pageY+"px"
+
+document.body.appendChild(c)
+
+setTimeout(()=>c.remove(),1000)
+
+})
+
+/* MUSICA */
+
+const canciones=[
+"musica/lefty1.mp3",
+"musica/lefty2.mp3",
+"musica/lefty3.mp3",
+"musica/lefty4.mp3"
+]
+
+let indice=0
+
+function reproducir(){
+
+player.src=canciones[indice]
+
+player.play()
+
+}
+
+player.addEventListener("ended",()=>{
+
+indice++
+
+if(indice>=canciones.length) indice=0
+
+reproducir()
+
+})
+
+document.addEventListener("click",()=>{
+
+reproducir()
+
+},{once:true})
+
+/* INICIAR */
+
+function iniciar(){
+
+escribirCarta()
+
+actualizarContador()
+
+setInterval(actualizarContador,1000)
+
+cargarFotos()
+
+}
+
+</script>
+
+</body>
+</html>
